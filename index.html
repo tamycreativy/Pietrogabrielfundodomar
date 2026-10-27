@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7f3e2" id="tc">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Convite · 8 anos do Pietro Gabriel">
+<meta property="og:description" content="Você está convidado(a)! Puxe o puxador para revelar o convite.">
+<title>Convite Pietro Gabriel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+[hidden]{display:none!important}
+/* Convite deslizante: cartão de aba com puxador. A capa tem uma fenda recortada; ao puxar, ela sobe e revela a página de informações que fica parada atrás. */
+:root{
+  --wine:#1d6b83;
+  --wine-deep:#145066;
+  --gold:#f2b45a;
+  --gold-light:#fff3d2;
+  --ground:#f7f3e2;
+  --ink:#1d6b83;
+  --display:'Fredoka','Trebuchet MS',system-ui,sans-serif;
+  --serif:'Fredoka','Trebuchet MS',system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{background:var(--ground)}
+html,body{margin:0;height:100%;min-height:100lvh;overflow:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%}
+body{background:var(--ground);color:var(--wine);font-family:var(--serif);-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button,input{font:inherit;color:inherit}
+
+/* ---------- telas ---------- */
+.screen{
+  position:fixed;inset:0;overflow:hidden;
+  opacity:0;visibility:hidden;
+  transition:opacity 0s linear .6s,visibility 0s linear .6s;
+}
+#bubbles{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:6}
+.screen.active{opacity:1;visibility:visible;transition:opacity .6s ease,visibility 0s}
+.bg{display:block;position:absolute;inset:-6%;background-size:cover;background-position:center;filter:blur(26px) brightness(.8);transform:scale(1.08)}
+
+.stage{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  height:100%;aspect-ratio:941/1672;
+  container-type:inline-size;
+}
+.stage>img,.page{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;user-select:none;-webkit-user-drag:none}
+
+/* ---------- convite: página + capa deslizante ---------- */
+/* em celulares estreitos o convite é cortado nas laterais; aqui a fenda fica na direita,
+   então o corte vai quase todo para a esquerda e o puxador continua inteiro na tela */
+.hot{
+  position:absolute;left:var(--x);top:var(--y);width:28.5%;aspect-ratio:1;
+  transform:translate(-50%,-50%);border-radius:50%;border:0;padding:0;margin:0;
+  background:transparent;cursor:pointer;display:block;text-decoration:none;
+}
+.hot:active{background:rgba(201,162,75,.22)}
+.hot:focus-visible{outline:3px solid var(--wine);outline-offset:-6px}
+
+.back{
+  position:absolute;left:50%;top:1.8%;transform:translateX(-50%);z-index:3;
+  font-family:var(--serif);font-size:3.2cqw;font-weight:500;color:var(--wine);
+  background:rgba(255,255,255,.72);border:1px solid rgba(29,107,131,.45);border-radius:99px;
+  padding:1.3cqw 3.8cqw;cursor:pointer;white-space:nowrap;
+  opacity:0;visibility:hidden;transition:opacity .5s ease,visibility 0s linear .5s;
+}
+.back.show{opacity:1;visibility:visible;transition:opacity .6s ease,visibility 0s}
+.back:active{background:rgba(242,180,90,.55)}
+.back:focus-visible{outline:2px solid var(--wine);outline-offset:2px}
+.cover{
+  position:absolute;inset:0;z-index:5;
+  transform:translate3d(0,0,0);will-change:transform;
+  transition:transform .55s cubic-bezier(.2,.8,.2,1);
+}
+.cover.drag{transition:none}
+.sheet{position:absolute;inset:0;transition:transform .55s cubic-bezier(.2,.8,.2,1)}
+.sheet.drag{transition:none}
+.stage#stage{opacity:0;transition:opacity .6s ease}
+.stage#stage.ready{opacity:1}
+.cover.gone{visibility:hidden;transition:none}
+.cover>img{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;user-select:none;-webkit-user-drag:none}
+
+/* puxador: desliza só dentro da fenda (de baixo para cima e de volta) */
+.pull{
+  position:absolute;left:50%;top:67.9%;width:17%;aspect-ratio:520/613;
+  transform:translate(-50%,-50%);
+  background:url(assets/puxador.webp) center/contain no-repeat;
+  border:0;padding:0;cursor:grab;touch-action:none;
+  filter:drop-shadow(0 .6cqw 1cqw rgba(30,8,10,.5));
+}
+.pull::before{content:"";position:absolute;inset:-14% -40%}
+.pull.settle{transition:top .5s cubic-bezier(.2,.8,.2,1)}
+.pull:active{cursor:grabbing}
+.pull:focus-visible{outline:3px solid var(--gold-light);outline-offset:4px;border-radius:30%}
+
+
+
+/* ---------- páginas de confirmação e localização ---------- */
+.ttl{
+  position:absolute;left:12%;right:12%;top:12%;height:7%;
+  display:grid;place-items:center;text-align:center;
+  font-family:var(--display);font-weight:600;font-size:6.4cqw;line-height:1.08;letter-spacing:.01em;white-space:nowrap;
+  color:var(--wine);text-shadow:0 1px 0 rgba(255,244,214,.7);margin:0;
+}
+.panel{
+  position:absolute;left:14%;right:14%;top:22%;bottom:13%;
+  display:flex;flex-direction:column;justify-content:center;gap:3.4cqw;
+  color:var(--wine);text-align:center;
+}
+.panel[hidden]{display:none}
+.bg.soft{filter:blur(16px) brightness(1.04) saturate(1.1)}
+.card{position:absolute;inset:8% 6%;border-radius:7cqw;background:rgba(255,255,255,.8);box-shadow:0 2cqw 6cqw rgba(20,80,102,.28),inset 0 0 0 .8cqw rgba(143,207,224,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.lb{display:block;margin:0 0 1.2cqw;font-family:var(--display);font-weight:700;font-size:2.7cqw;letter-spacing:.16em;text-transform:uppercase;text-align:left}
+.panel input[type=text]{
+  width:100%;min-height:11cqw;padding:1cqw 3.4cqw;border-radius:2.4cqw;
+  border:1.5px solid #7cc6dc;background:rgba(255,255,255,.75);
+  font-family:var(--serif);font-size:5cqw;font-weight:700;color:var(--wine);
+  box-shadow:inset 0 1px 3px rgba(94,18,32,.18);
+}
+.panel input[type=text]::placeholder{color:rgba(94,18,32,.45);font-weight:600}
+.panel input[type=text]:focus{outline:2px solid rgba(94,18,32,.55);outline-offset:1px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:2.4cqw}
+.choice{position:relative}
+.choice input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.choice span{
+  display:flex;align-items:center;justify-content:center;text-align:center;min-height:11cqw;padding:1cqw 1.6cqw;border-radius:2.4cqw;
+  border:1.5px solid #7cc6dc;background:rgba(255,255,255,.65);
+  font-size:4.1cqw;font-weight:700;line-height:1.05;white-space:nowrap;
+}
+.choice input:checked+span{background:linear-gradient(180deg,#3fb0cf,#1f86a6);color:var(--gold-light);border-color:var(--gold)}
+.choice input:focus-visible+span{outline:2px solid rgba(94,18,32,.7);outline-offset:2px}
+.stepper{display:flex;align-items:center;justify-content:center;gap:5cqw}
+.stepper button{width:11cqw;height:11cqw;border-radius:50%;border:1.5px solid #7cc6dc;background:rgba(255,255,255,.75);font-size:6.4cqw;line-height:1;font-weight:700;color:var(--wine);cursor:pointer;padding:0}
+.stepper output{min-width:12cqw;text-align:center;font-family:var(--display);font-size:7cqw;font-weight:700}
+.stepper button:focus-visible{outline:2px solid rgba(94,18,32,.7);outline-offset:2px}
+.err{margin:0;color:#9b1c2e;font-size:4cqw;font-weight:700}
+.acts{display:grid;gap:2.4cqw;margin-top:1cqw}
+.btn{
+  display:flex;align-items:center;justify-content:center;min-height:11.5cqw;padding:1cqw 5cqw;border-radius:999px;
+  font-family:var(--display);font-weight:700;font-size:3.2cqw;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;cursor:pointer;
+}
+.btn.primary{border:1px solid var(--gold);color:#fff;background:linear-gradient(180deg,#3fb0cf,#1f86a6);box-shadow:0 .8cqw 2cqw rgba(60,8,18,.35)}
+.btn.ghost{border:1.5px solid #7cc6dc;background:transparent;color:var(--wine)}
+.btn:focus-visible{outline:2px solid var(--wine);outline-offset:2px}
+.orn{color:#7cc6dc;font-size:4.4cqw;letter-spacing:.6em;text-indent:.6em}
+.big{font-family:var(--display);font-weight:700;font-size:6.6cqw;line-height:1.15;letter-spacing:.05em;text-transform:uppercase}
+.soft{font-size:5.4cqw;font-weight:700;line-height:1.25;margin:0}
+.soft.it{font-style:italic;font-weight:600}
+.rule{height:1px;width:60%;margin:0 auto;background:linear-gradient(90deg,transparent,#7cc6dc,transparent)}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<!-- convite -->
+<audio id="music" src="assets/musica.mp3" loop preload="auto"></audio>
+<section class="screen active" id="main">
+  <div class="bg" style="background-image:url(assets/informacoes.jpg)"></div>
+  <div class="stage" id="stage">
+    <div class="sheet" id="sheet">
+      <img class="page" src="assets/informacoes.jpg" alt="Convite de Pietro Gabriel, 8 anos. Sábado, 5 de dezembro, às 9 horas da manhã." width="941" height="1672" decoding="async">
+      <button class="hot" id="btn-confirm" type="button" style="--x:33.5%;--y:87.9%" aria-label="Confirmar presença"></button>
+      <button class="hot" id="btn-map" type="button" style="--x:65.9%;--y:87.9%" aria-label="Local da festa"></button>
+      <button class="back" id="btn-cover" type="button" tabindex="-1">↑ voltar para a capa</button>
+    </div>
+
+    <div class="cover" id="cover">
+      <img src="assets/capa.webp" alt="" width="940" height="1672" decoding="async" fetchpriority="high">
+      <button class="pull" id="pull" type="button" role="slider" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Puxador: arraste para cima para abrir o convite"></button>
+    </div>
+  </div>
+  <canvas id="bubbles" aria-hidden="true"></canvas>
+</section>
+
+<!-- confirmar presença -->
+<section class="screen" id="rsvp" aria-hidden="true">
+  <div class="bg soft" style="background-image:url(assets/informacoes.jpg)"></div>
+  <div class="stage">
+    <div class="card"></div>
+    <h2 class="ttl" id="rsvp-ttl">Confirmar presença</h2>
+    <div class="panel" id="rsvp-form-wrap">
+      <form id="rsvp-form" novalidate style="display:contents">
+        <div>
+          <label class="lb" for="rsvp-nome">Seu nome</label>
+          <input type="text" id="rsvp-nome" name="nome" placeholder="Nome e sobrenome" autocomplete="name" maxlength="60">
+        </div>
+        <div>
+          <span class="lb" id="lg-resp">Você vai?</span>
+          <div class="choices" role="radiogroup" aria-labelledby="lg-resp">
+            <label class="choice"><input type="radio" name="resp" value="sim" checked><span>Sim, eu vou!</span></label>
+            <label class="choice"><input type="radio" name="resp" value="nao"><span>Não poderei ir</span></label>
+          </div>
+        </div>
+        <div id="qtd-wrap">
+          <span class="lb" id="lg-qtd">Quantas pessoas, com você?</span>
+          <div class="stepper" role="group" aria-labelledby="lg-qtd">
+            <button type="button" id="qtd-minus" aria-label="Diminuir">−</button>
+            <output id="qtd" aria-live="polite">1</output>
+            <button type="button" id="qtd-plus" aria-label="Aumentar">+</button>
+          </div>
+        </div>
+        <p class="err" id="rsvp-err" role="alert" hidden>Escreva seu nome para continuar.</p>
+        <div class="acts">
+          <button class="btn primary" type="submit">Enviar confirmação</button>
+          <button class="btn ghost" type="button" data-back>Voltar</button>
+        </div>
+      </form>
+    </div>
+    <div class="panel" id="rsvp-thanks" hidden>
+      <span class="orn" aria-hidden="true">✦ ✦ ✦</span>
+      <div class="big" id="thanks-title">Que alegria!</div>
+      <div class="rule"></div>
+      <p class="soft" id="thanks-text"></p>
+      <div class="acts">
+        <a class="btn primary" id="thanks-wa" target="_blank" rel="noopener noreferrer" href="#" hidden>Avisar no WhatsApp</a>
+        <button class="btn ghost" type="button" data-back>Voltar ao convite</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- localização -->
+<section class="screen" id="map" aria-hidden="true">
+  <div class="bg soft" style="background-image:url(assets/informacoes.jpg)"></div>
+  <div class="stage">
+    <div class="card"></div>
+    <h2 class="ttl">Local da festa</h2>
+    <div class="panel">
+      <span class="orn" aria-hidden="true">✦ ✦ ✦</span>
+      <div class="soft it">A comemoração será no</div>
+      <div class="big" id="map-place">Palácio das Festas</div>
+      <p class="soft" id="map-addr" hidden></p>
+      <div class="rule"></div>
+      <p class="soft it" id="map-when"></p>
+      <div class="acts">
+        <a class="btn primary" id="map-open" target="_blank" rel="noopener noreferrer" href="#">Abrir no mapa</a>
+        <button class="btn ghost" type="button" data-back>Voltar</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  /* ====== dados do convite (edite aqui) ====== */
+  var CONFIG={
+    nome:'Pietro Gabriel',
+    idade:8,
+    local:'',                     /* ex.: 'Clube Aquático' — se ficar vazio, mostra "Local a confirmar" */
+    endereco:'',
+    data:'sábado, 5 de dezembro',
+    hora:'9h da manhã',
+    whatsapp:''                   /* ex.: '5585999999999' */
+  };
+
+  var $=function(s){return document.querySelector(s)};
+  var screens={main:$('#main'),rsvp:$('#rsvp'),map:$('#map')};
+  var cover=$('#cover'),pull=$('#pull'),stage=$('#stage');
+  var opened=false;
+
+  /* a cor das barras do navegador acompanha a arte da tela atual */
+  var TONES={cover:'#f7f3e2',info:'#e7ece0',form:'#e7ece0'};
+  function tone(c){document.documentElement.style.background=c;document.body.style.background=c;$('#tc').setAttribute('content',c)}
+  function go(name){
+    if(name==='main')tone(opened?TONES.info:TONES.cover);else tone(TONES.form);
+    Object.keys(screens).forEach(function(k){
+      var el=screens[k],on=k===name;
+      el.classList.toggle('active',on);
+      el.style.zIndex=on?10:5;
+      el.setAttribute('aria-hidden',on?'false':'true');
+      if('inert' in el) el.inert=!on;
+    });
+  }
+  go('main');
+  /* convite ainda fechado: os botões da página ficam inacessíveis por baixo da capa */
+  document.querySelectorAll('#main .hot,#btn-cover').forEach(function(b){b.tabIndex=-1;b.setAttribute('aria-hidden','true')});
+
+
+  /* ====== bolhas que sobem quando a capa abre ====== */
+  var bc=$('#bubbles'),bx=bc.getContext('2d'),BU=[],bRaf=0,bSpawn=0,bEnd=0,bDpr=Math.min(window.devicePixelRatio||1,2),bW=0,bH=0;
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  function bSize(){bW=bc.clientWidth;bH=bc.clientHeight;bc.width=Math.round(bW*bDpr);bc.height=Math.round(bH*bDpr)}
+  window.addEventListener('resize',bSize);bSize();
+  function addBubble(){
+    var r=5+Math.random()*Math.random()*30;
+    BU.push({x:Math.random()*bW,y:bH+r+Math.random()*40,r:r,v:70+Math.random()*110+(30-r)*2,w:Math.random()*6.28,ws:.8+Math.random()*1.4,wa:6+Math.random()*16,a:.5+Math.random()*.35});
+  }
+  function bFrame(t){
+    bx.setTransform(bDpr,0,0,bDpr,0,0);bx.clearRect(0,0,bW,bH);
+    var now=t/1000,dt=Math.min(.05,(now-(bFrame.last||now)));bFrame.last=now;
+    if(now<bEnd){bSpawn+=dt*22;while(bSpawn>=1){addBubble();bSpawn--}}
+    for(var i=BU.length-1;i>=0;i--){var b=BU[i];
+      b.y-=b.v*dt;b.w+=b.ws*dt;var x=b.x+Math.sin(b.w)*b.wa;
+      if(b.y<-b.r*2){BU.splice(i,1);continue}
+      var fade=Math.min(1,Math.max(0,(b.y+b.r)/(bH*.18)))*b.a;
+      bx.globalAlpha=fade;
+      var g=bx.createRadialGradient(x-b.r*.3,b.y-b.r*.35,b.r*.1,x,b.y,b.r);
+      g.addColorStop(0,'rgba(255,255,255,.18)');g.addColorStop(.7,'rgba(190,235,250,.12)');g.addColorStop(1,'rgba(255,255,255,.7)');
+      bx.beginPath();bx.arc(x,b.y,b.r,0,6.283);bx.fillStyle=g;bx.fill();
+      bx.lineWidth=Math.max(1,b.r*.07);bx.strokeStyle='rgba(255,255,255,.75)';bx.stroke();
+      bx.beginPath();bx.arc(x-b.r*.35,b.y-b.r*.4,b.r*.22,0,6.283);bx.fillStyle='rgba(255,255,255,.9)';bx.fill();
+    }
+    bx.globalAlpha=1;
+    if(BU.length||now<bEnd)bRaf=requestAnimationFrame(bFrame);else{bRaf=0;bFrame.last=0;bx.clearRect(0,0,bW,bH)}
+  }
+  function bubbleBurst(){
+    if(reduce)return;
+    bSize();bEnd=performance.now()/1000+2.8;bSpawn=0;
+    for(var i=0;i<14;i++){addBubble();BU[BU.length-1].y=bH*(.9+Math.random()*.12)}
+    if(!bRaf)bRaf=requestAnimationFrame(bFrame);
+  }
+  function bubbleClear(){BU.length=0;bEnd=0}
+
+  /* ====== puxador: desliza dentro da fenda enquanto a capa sobe ====== */
+  /* s = quanto o dedo subiu (px). Parte disso é o puxador deslizando dentro da fenda (r),
+     o resto é a capa subindo (c), e a página de informações aparece embaixo aos poucos. */
+  var Y_BOTTOM=67.9, TRAVEL=.43, THRESH=.43;        /* TRAVEL e THRESH em fração da altura do convite */
+  var s=0,s0=0,startY=0,dragging=false,moved=false,H=0;
+  function measure(){H=stage.getBoundingClientRect().height}
+  function parts(v){return {r:Math.min(v*TRAVEL/THRESH,TRAVEL*H),c:v*.5}}   /* capa como antes; o puxador chega ao topo da fenda exatamente no fim do arraste */
+  var music=$('#music'),musicOn=false;
+  /* navegadores só liberam som depois de um toque: no primeiro toque no puxador "destravamos" o áudio */
+  var unlocked=false;
+  function unlock(){
+    if(unlocked)return;unlocked=true;
+    music.muted=true;
+    var p=music.play();
+    if(p&&p.then)p.then(function(){ if(!musicOn){music.pause();music.currentTime=0} music.muted=false },function(){unlocked=false;music.muted=false});
+    else music.muted=false;
+  }
+  function playMusic(){
+    if(musicOn)return;musicOn=true;music.muted=false;
+    var p=music.play();if(p&&p.catch)p.catch(function(){musicOn=false});
+  }
+  function stopMusic(){
+    musicOn=false;music.pause();
+    try{music.currentTime=0}catch(_){}
+  }
+  function render(v){
+    var q=parts(v);
+    if(!opened){ if(v>=THRESH*H*.5)playMusic(); else if(musicOn)stopMusic(); }
+    cover.style.transform='translate3d(0,'+(-q.c)+'px,0)';
+    pull.style.top=(Y_BOTTOM-q.r/H*100)+'%';
+    pull.setAttribute('aria-valuenow',Math.min(100,Math.round(v/(THRESH*H)*100)));
+  }
+  function finish(){
+    if(opened)return;
+    opened=true;dragging=false;tone(TONES.info);
+    measure();playMusic();bubbleBurst();
+    cover.classList.remove('drag');pull.classList.add('settle');
+    pull.style.top=(Y_BOTTOM-TRAVEL*100)+'%';
+    cover.style.transform='translate3d(0,'+(-(H*1.04))+'px,0)';
+    pull.disabled=true;
+    document.querySelectorAll('#main .hot,#btn-cover').forEach(function(b){b.tabIndex=0;b.removeAttribute('aria-hidden')});
+    setTimeout(function(){cover.classList.add('gone');if(opened)$('#btn-cover').classList.add('show')},650);
+  }
+  function snapBack(){
+    s=0;pull.classList.add('settle');
+    render(0);
+    setTimeout(function(){if(!opened&&!dragging)pull.classList.remove('settle')},600);
+  }
+  /* voltar para a capa: fecha a capa de novo e a música para */
+  function reopenCover(){
+    if(!opened)return;
+    opened=false;s=0;measure();tone(TONES.cover);bubbleClear();
+    $('#btn-cover').classList.remove('show');
+    stopMusic();
+    cover.classList.remove('gone');
+    void cover.offsetWidth;
+    cover.style.transform='translate3d(0,0,0)';
+    pull.style.top=Y_BOTTOM+'%';
+    pull.disabled=false;
+    setTimeout(function(){pull.classList.remove('settle');pull.setAttribute('aria-valuenow',0)},560);
+    document.querySelectorAll('#main .hot,#btn-cover').forEach(function(b){b.tabIndex=-1;b.setAttribute('aria-hidden','true')});
+  }
+  $('#btn-cover').addEventListener('click',reopenCover);
+  pull.addEventListener('pointerdown',function(e){
+    if(opened)return;
+    measure();
+    unlock();
+    dragging=true;moved=false;startY=e.clientY;s0=s;
+    cover.classList.add('drag');
+    try{pull.setPointerCapture(e.pointerId)}catch(_){}
+    e.preventDefault();
+  });
+  pull.addEventListener('pointermove',function(e){
+    if(!dragging)return;
+    var dy=startY-e.clientY;
+    if(Math.abs(dy)>6)moved=true;
+    s=Math.max(0,Math.min(THRESH*H,s0+dy));
+    render(s);
+    if(s>=THRESH*H*.995)finish();
+  });
+  pull.addEventListener('pointerup',function(){
+    if(!dragging)return;
+    dragging=false;cover.classList.remove('drag');
+    if(musicOn&&music.paused){musicOn=false;playMusic()}
+    if(!moved||s>=THRESH*H*.9)finish();          /* toque simples ou quase no fim: abre */
+    else snapBack();                              /* soltou no meio do caminho: a capa desce */
+  });
+  pull.addEventListener('pointercancel',function(){if(!dragging)return;dragging=false;cover.classList.remove('drag');snapBack()});
+  pull.addEventListener('keydown',function(e){
+    if(opened)return;
+    measure();
+    if(e.key==='ArrowUp'){e.preventDefault();s=Math.min(THRESH*H,s+.1*H);render(s);if(s>=THRESH*H*.995)finish()}
+    else if(e.key==='ArrowDown'){e.preventDefault();s=Math.max(0,s-.1*H);render(s)}
+    else if(e.key==='Enter'||e.key===' '){e.preventDefault();finish()}
+  });
+  measure();render(0);
+
+  /* só mostra o convite quando a capa e o puxador já carregaram (evita o texto aparecer sozinho no escuro) */
+  (function(){
+    var ph=new Image();ph.src='assets/puxador.webp';
+    var imgs=[cover.querySelector('img'),ph],done=false;
+    function show(){if(done)return;done=true;stage.classList.add('ready')}
+    var left=imgs.length;
+    if(!left)return show();
+    imgs.forEach(function(im){
+      var ok=function(){if(--left===0)show()};
+      if(im.complete)ok();else{im.addEventListener('load',ok);im.addEventListener('error',ok)}
+    });
+    setTimeout(show,5000);
+  })();
+
+  /* ====== botões ====== */
+  $('#btn-confirm').addEventListener('click',function(){
+    $('#rsvp-thanks').hidden=true;$('#rsvp-form-wrap').hidden=false;$('#rsvp-ttl').textContent='Confirmar presença';$('#rsvp-err').hidden=true;
+    go('rsvp');
+  });
+  $('#btn-map').addEventListener('click',function(){go('map')});
+  document.querySelectorAll('[data-back]').forEach(function(b){b.addEventListener('click',function(){go('main')})});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&opened)go('main')});
+
+  /* ====== localização ====== */
+  var q=CONFIG.local+(CONFIG.endereco?', '+CONFIG.endereco:'');
+  $('#map-open').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
+  $('#map-place').textContent=CONFIG.local||'Local a confirmar';
+  if(!CONFIG.local)$('#map-open').hidden=true;
+  if(CONFIG.endereco){var a=$('#map-addr');a.textContent=CONFIG.endereco;a.hidden=false}
+  $('#map-when').textContent=CONFIG.data+' · às '+CONFIG.hora;
+
+  /* ====== confirmar presença ====== */
+  var form=$('#rsvp-form'),nome=$('#rsvp-nome'),err=$('#rsvp-err');
+  var qtdEl=$('#qtd'),qtdWrap=$('#qtd-wrap'),qtd=1;
+  function setQtd(n){qtd=Math.max(1,Math.min(10,n));qtdEl.textContent=qtd}
+  $('#qtd-minus').addEventListener('click',function(){setQtd(qtd-1)});
+  $('#qtd-plus').addEventListener('click',function(){setQtd(qtd+1)});
+  function resp(){return form.querySelector('input[name=resp]:checked').value}
+  form.querySelectorAll('input[name=resp]').forEach(function(r){
+    r.addEventListener('change',function(){qtdWrap.hidden=resp()==='nao'});
+  });
+  nome.addEventListener('input',function(){err.hidden=true});
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var n=nome.value.replace(/\s+/g,' ').trim();
+    if(n.length<2){err.hidden=false;nome.focus();return}
+    var vai=resp()==='sim',first=n.split(' ')[0],msg,titulo,texto;
+    if(vai){
+      titulo='Que alegria, '+first+'!';
+      texto='Presença confirmada para '+qtd+(qtd===1?' pessoa':' pessoas')+'. Esperamos você em '+CONFIG.data+', às '+CONFIG.hora+(CONFIG.local?', no '+CONFIG.local:'')+'.';
+      msg='Olá! Confirmo presença no aniversário de '+CONFIG.idade+' anos do '+CONFIG.nome+' ('+CONFIG.data+', às '+CONFIG.hora+(CONFIG.local?', '+CONFIG.local:'')+'). Nome: '+n+'. Pessoas: '+qtd+'.';
+    }else{
+      titulo='Obrigado por avisar, '+first+'!';
+      texto='Sentiremos a sua falta. Seu recado foi registrado com carinho.';
+      msg='Olá! Infelizmente não poderei ir ao aniversário de '+CONFIG.idade+' anos do '+CONFIG.nome+'. Nome: '+n+'.';
+    }
+    $('#thanks-title').textContent=titulo;
+    $('#thanks-text').textContent=texto;
+    var wa=$('#thanks-wa');
+    if(CONFIG.whatsapp){wa.href='https://wa.me/'+CONFIG.whatsapp+'?text='+encodeURIComponent(msg);wa.hidden=false}else{wa.hidden=true}
+    $('#rsvp-form-wrap').hidden=true;$('#rsvp-thanks').hidden=false;$('#rsvp-ttl').textContent='Obrigado!';
+  });
+})();
+</script>
+
+</body>
+</html>
