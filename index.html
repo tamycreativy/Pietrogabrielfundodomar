@@ -151,6 +151,7 @@ button,input{font:inherit;color:inherit}
 .rule{height:1px;width:60%;margin:0 auto;background:linear-gradient(90deg,transparent,#7cc6dc,transparent)}
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important}}
+.redir{margin:1.2cqw 0 0;text-align:center;font-size:3.3cqw;line-height:1.35;color:var(--ink);opacity:.85;font-weight:500}
 </style>
 </head>
 <body>
@@ -202,6 +203,7 @@ button,input{font:inherit;color:inherit}
           </div>
         </div>
         <p class="err" id="rsvp-err" role="alert" hidden>Escreva seu nome para continuar.</p>
+        <p class="redir" id="redir" hidden><span aria-hidden="true">🫧</span> Ao enviar, você será levado ao WhatsApp para finalizar a sua confirmação.</p>
         <div class="acts">
           <button class="btn primary" type="submit">Enviar confirmação</button>
           <button class="btn ghost" type="button" data-back>Voltar</button>
@@ -248,8 +250,8 @@ button,input{font:inherit;color:inherit}
   var CONFIG={
     nome:'Pietro Gabriel',
     idade:8,
-    local:'',                     /* ex.: 'Clube Aquático' — se ficar vazio, mostra "Local a confirmar" */
-    endereco:'',
+    local:'Ita Park Clube e Hospedagem',                     /* ex.: 'Clube Aquático' — se ficar vazio, mostra "Local a confirmar" */
+    endereco:'Av. Geraldo Batista, 1089 · Itaitinga, CE',
     data:'sábado, 5 de dezembro',
     hora:'9h da manhã',
     whatsapp:''                   /* ex.: '5585999999999' */
@@ -452,6 +454,7 @@ button,input{font:inherit;color:inherit}
     r.addEventListener('change',function(){qtdWrap.hidden=resp()==='nao'});
   });
   nome.addEventListener('input',function(){err.hidden=true});
+  if(CONFIG.whatsapp)$('#redir').hidden=false;
   form.addEventListener('submit',function(e){
     e.preventDefault();
     var n=nome.value.replace(/\s+/g,' ').trim();
@@ -469,7 +472,7 @@ button,input{font:inherit;color:inherit}
     $('#thanks-title').textContent=titulo;
     $('#thanks-text').textContent=texto;
     var wa=$('#thanks-wa');
-    if(CONFIG.whatsapp){wa.href='https://wa.me/'+CONFIG.whatsapp+'?text='+encodeURIComponent(msg);wa.hidden=false}else{wa.hidden=true}
+    if(CONFIG.whatsapp){wa.href='https://wa.me/'+CONFIG.whatsapp+'?text='+encodeURIComponent(msg);wa.hidden=false;setTimeout(function(){window.open(wa.href,'_blank','noopener')},900)}else{wa.hidden=true}
     $('#rsvp-form-wrap').hidden=true;$('#rsvp-thanks').hidden=false;$('#rsvp-ttl').textContent='Obrigado!';
   });
 })();
