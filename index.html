@@ -94,7 +94,7 @@ button,input{font:inherit;color:inherit}
 
 /* puxador: desliza só dentro da fenda (de baixo para cima e de volta) */
 .pull{
-  position:absolute;left:50%;top:65.4%;width:26%;aspect-ratio:520/613;
+  position:absolute;left:50%;top:66%;width:38%;aspect-ratio:520/613;
   transform:translate(-50%,-50%);
   background:url(assets/puxador.webp) center/contain no-repeat;
   border:0;padding:0;cursor:grab;touch-action:none;
@@ -329,7 +329,7 @@ button,input{font:inherit;color:inherit}
   /* ====== puxador: desliza dentro da fenda enquanto a capa sobe ====== */
   /* s = quanto o dedo subiu (px). Parte disso é o puxador deslizando dentro da fenda (r),
      o resto é a capa subindo (c), e a página de informações aparece embaixo aos poucos. */
-  var Y_BOTTOM=65.4, TRAVEL=.381, THRESH=.43;        /* TRAVEL e THRESH em fração da altura do convite */
+  var Y_BOTTOM=66, TRAVEL=.394, THRESH=.43;        /* TRAVEL e THRESH em fração da altura do convite */
   var s=0,s0=0,startY=0,dragging=false,moved=false,H=0;
   function measure(){H=stage.getBoundingClientRect().height}
   function parts(v){return {r:Math.min(v*TRAVEL/THRESH,TRAVEL*H),c:v*.5}}   /* capa como antes; o puxador chega ao topo da fenda exatamente no fim do arraste */
